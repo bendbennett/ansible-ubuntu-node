@@ -1,0 +1,57 @@
+# playbook.yml
+---
+- name: configure and deploy the webservers and application code
+  hosts: all
+  user: vagrant
+  sudo: yes
+  sudo_user: root
+  vars_files:
+    - vars.yml
+  vars:
+    - apt_file: /etc/apt/sources.list.d/google-chrome.list
+
+  tasks:
+  - name: Node.js | Package prerequisites for node.js
+    action: apt pkg=python-software-properties state=installed
+    tags: nodejs
+
+  - name: Node.js | Add the node.js PPA
+    action: command add-apt-repository -y ppa:chris-lea/node.js creates=/etc/apt/sources.list.d/chris-lea-node_js-precise.list
+    tags: nodejs
+
+  - name: Node.js | Update the apt cache for the new repository
+    action: apt update-cache=yes
+    tags: nodejs
+
+  - name: Node.js | Install nodejs and git
+    action: apt pkg={{ item }} state=installed
+    tags: nodejs
+    with_items:
+      - nodejs
+      - git
+
+  - name: Creates directory
+    file: path=/var/www state=directory
+
+  - name: install npm packages based on package.json
+    npm: path=/srv/projects/angular-phonecat
+
+  - name: Does the Google apt file exist?
+    command: test -f {{apt_file}}
+    register: google_apt_exists
+    ignore_errors: True
+
+  - name: Add Google Chrome key
+    shell: wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
+    when: google_apt_exists.rc == 1
+
+  - name: Add Google Chrome repo
+    copy: content="deb http://dl.google.com/linux/chrome/deb/ stable main" dest={{apt_file}} owner=root group=root mode=644
+    when: google_apt_exists.rc == 1
+
+  - name: Update apt cache
+    apt: update_cache=yes
+    when: google_apt_exists.rc == 1
+
+  - name: Install Google Chrome
+    apt: pkg=google-chrome-stable state=installed
