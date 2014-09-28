@@ -9,6 +9,7 @@ VAGRANTFILE_API_VERSION = "2"
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.box = "Ubuntu_14.04_64_Server_Gui_Terminal"
+  config.vm.box_url = "https://dl.dropboxusercontent.com/u/23261942/Ubuntu_14.04_64_Server_Gui.box"
   config.vm.network "private_network", ip: settings["vagrant_vm_ip_address"]
   config.ssh.forward_agent = true
   config.vm.synced_folder "/Users/bdb/sites", "/srv/projects", owner: "vagrant", group: "vagrant"
